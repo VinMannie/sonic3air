@@ -8,8 +8,11 @@
 <link rel="apple-touch-icon" sizes="256x256" href="icon.png">
 <link rel="manifest" href="manifest.json">
 <style>body{background:black;color:white;font-family:arial;margin:0;padding:none;overflow:hidden;-webkit-user-select:none;}.emscripten{padding-right:0;margin-left:auto;margin-right:auto;display:block}div.emscripten{text-align:center}div.emscripten_border{border:0 none;}canvas.emscripten{border:0 none;background-color:#000}.spinner{height:30px;width:30px;margin:0;margin-top:20px;margin-left:20px;display:inline-block;vertical-align:top;-webkit-animation:rotation .8s linear infinite;-moz-animation:rotation .8s linear infinite;-o-animation:rotation .8s linear infinite;animation:rotation .8s linear infinite;border-left:5px solid #ebebeb;border-right:5px solid #ebebeb;border-bottom:5px solid #ebebeb;border-top:5px solid #787878;border-radius:100%;background-color:#bdd72e}@-webkit-keyframes rotation{from{-webkit-transform:rotate(0)}to{-webkit-transform:rotate(360deg)}}@-moz-keyframes rotation{from{-moz-transform:rotate(0)}to{-moz-transform:rotate(360deg)}}@-o-keyframes rotation{from{-o-transform:rotate(0)}to{-o-transform:rotate(360deg)}}@keyframes rotation{from{transform:rotate(0)}to{transform:rotate(360deg)}}#status{display:inline-block;vertical-align:top;margin-top:30px;margin-left:20px;font-size:1em;font-weight:700;color:#787878}#progress{height:20px;width:250px}
-.hidden{display:none;}
-.file_select{text-align:center;font-size: 1em;}
+.hidden{display:none !important;}
+.file_select{
+	text-align:center;
+	font-size: 0.9em;
+}
 input[type="file"] {display: none;}
 .fileSelector {
   display: inline-block;
@@ -33,7 +36,8 @@ input[type="file"] {display: none;}
   background: linear-gradient(0deg, #333 0%, #555 100%);
 }
 .restart{text-align:center;font-size: 1em;}
-.restart > button {
+.extraDownloads{display:inline-block;}
+.restart > button,.extraDownloads > button,.extraDownloadsSection > button {
   display: inline-block;
   color: white;
   background: #222;
@@ -49,12 +53,22 @@ input[type="file"] {display: none;}
   text-shadow: 1px 1px #555;
   font-size: 32px;
 }
+.extraDownloadsSection{
+	text-align: center;
+}
+.extraDownloadsProgress{
+	text-align:center;
+	font-size: 0.9em;
+}
 #root{
 	color: black;
 }
 </style>
 <script src="browserfs.min.js"></script>
 <script>
+	//This wrapper around the wasm build of the game is intentionally not obfuscated.
+	//Feel free to use it as an example of how to interact with emscripten WebAssembly builds for other projects.
+var hasRemasteredAudio = false;
 function startGame(){
 	callMain();
 	
@@ -84,12 +98,19 @@ function onPageLoaded(){
 	loader.setAttribute('async', '');
 	loader.setAttribute('src', 'loader.js');
 	document.body.appendChild(loader);
+	Module['calledRun'] = true; //We got here from pre-run, so loader needs to know that.
 }
 
 function onGameExit(){
 	var restartBits = document.getElementsByClassName('restart');
 	for (var i = 0; i < restartBits.length; i++) {
 		restartBits[i].classList.remove('hidden');
+	}
+	if(hasRemasteredAudio === false){
+		var extraBits = document.getElementsByClassName('extraDownloads');
+		for (var i = 0; i < extraBits.length; i++) {
+			extraBits[i].classList.remove('hidden');
+		}
 	}
 	
 	var gameView = document.getElementById("gameView");
@@ -131,6 +152,10 @@ function onDownloadsComplete(){
 	var BFS = new BrowserFS.EmscriptenFS(Module.FS, Module.PATH, Module.ERRNO_CODES);
 	FS.mount(BFS, {root: '/'}, '/sonic3air/savedata/'); //Mount BrowserFS root into /sonic3air/savedata
 	FS.chdir("/sonic3air");
+	hasRemasteredAudio = (FS.analyzePath("/sonic3air/savedata/audioremaster.bin", true).exists === true);
+	if(hasRemasteredAudio === true){
+		FS.symlink('/sonic3air/savedata/audioremaster.bin','/sonic3air/data/audioremaster.bin');
+	}
 	if(FS.analyzePath("/sonic3air/savedata/Sonic_Knuckles_wSonic3.bin", true).exists === true){
 		//Everything exists
 		var internalFolder = FS.analyzePath("/sonic3air/___internal/");
@@ -161,6 +186,77 @@ function hidePageUI(){
 	}
 }
 
+function showExtraDownloads(){
+	var extraBits = document.getElementsByClassName('extraDownloadsSection');
+	for (var i = 0; i < extraBits.length; i++) {
+		extraBits[i].classList.remove('hidden');
+	}
+	
+	extraBits = document.getElementsByClassName('restart');
+	for (var i = 0; i < extraBits.length; i++) {
+		extraBits[i].classList.add('hidden');
+	}
+	
+	extraBits = document.getElementById('root');
+	extraBits.classList.add('hidden');
+}
+
+function hideExtraDownloads(){
+	let extraBits = document.getElementsByClassName('extraDownloadsSection');
+	for (var i = 0; i < extraBits.length; i++) {
+		extraBits[i].classList.add('hidden');
+	}
+	
+	extraBits = document.getElementsByClassName('restart');
+	for (var i = 0; i < extraBits.length; i++) {
+		extraBits[i].classList.remove('hidden');
+	}
+	
+	extraBits = document.getElementById('root');
+	extraBits.classList.remove('hidden');
+}
+
+async function downloadRemastered(){
+	let extraBits = document.getElementsByClassName('extraDownloadsSection');
+	for (var i = 0; i < extraBits.length; i++) {
+		extraBits[i].classList.add('hidden');
+	}
+	
+	extraBits = document.getElementsByClassName('extraDownloadsProgress');
+	for (var i = 0; i < extraBits.length; i++) {
+		extraBits[i].classList.remove('hidden');
+	}
+	
+	let progressBar = document.getElementById('extraProgress');
+	let statusText = document.getElementById('extraStatus');
+	progressBar.value = 0;
+	let response = await fetch('audioremaster.bin');
+	const reader = response.body.getReader();
+	const totalSize = +response.headers.get('Content-Length');
+	if(totalSize > 0){
+		let file = FS.open('/sonic3air/savedata/audioremaster.bin','w+');
+		for(currentSize = 0; currentSize < totalSize;) {
+		  const {done, value} = await reader.read();
+		
+		  if (done) {
+			  progressBar.value = 100;
+		    break;
+		  }
+		
+		  FS.write(file, value, 0, value.length);
+		  currentSize += value.length;
+		  progressBar.value = currentSize * 100 / totalSize;
+		}
+		FS.close(file);
+		statusText.innerText = "Download complete! Restarting game...";
+	}
+	else{
+		statusText.innerText = "Download failed to start. Restarting game...";
+	}
+	setTimeout(()=>location.reload(), 2000);
+	await sleep(2000);
+}
+
 function installS3kFile(fileInput) {
     if (fileInput.files.length == 0)
         return;
@@ -180,7 +276,8 @@ function installS3kFile(fileInput) {
 			return;
 		}
 
-		//TODO: If this call throws an exception with error code 20, it means the ROM already exists.
+		//If this call throws an exception with error code 20, it means the ROM already exists.
+		//But that shouldn't happen because we wouldn't be calling this if it already existed.
         Module['FS_createDataFile']('/sonic3air/savedata/', 'Sonic_Knuckles_wSonic3.bin', data, true, true, true);
 		
 		hidePageUI();
@@ -202,6 +299,8 @@ function installS3kFile(fileInput) {
 <div class="emscripten pageUI hidden" id=status>Downloading...</div>
 <div class="emscripten pageUI hidden"><progress hidden id=progress max=100 value=0></progress></div>
 <div class="file_select hidden">
+	<span>To run the game, Sonic 3 A.I.R. requires an original copy of the Sonic 3 and Knuckles ROM. 
+	You can get this file by purchasing the game on Steam for Windows, Mac or Linux.</span><br/>
 	<span id="s3kPromptMessage">Please provide Sonic_Knuckles_wSonic3.bin:</span><br/>
 	<label for="fileSelector" class="fileSelector">
 	    Select File...
@@ -209,7 +308,26 @@ function installS3kFile(fileInput) {
 	<input id="fileSelector" class="fileSelector" type="file" onChange="installS3kFile(this);"}/>
 </div>
 <div class="restart hidden">
-	<button type="button" onclick="location.reload()">Restart Game</button> 
+	<button type="button" onclick="location.reload()">Restart Game</button>
+	<div class="extraDownloads hidden">
+		<button type="button" onclick="showExtraDownloads()">Extra Downloads</button> 
+	</div>
+</div>
+<div class="extraDownloadsSection hidden">
+	<div style="margin:1em;">On other platforms, Sonic 3 A.I.R. includes remastered music which is enabled by default. 
+	None of the compositions have been altered, but instead the music is played back in higher quality 
+	than the original MegaDrive or Genesis console was capable of. On this device the remastered music 
+	is not included by default and you can install it here. Installing this may reduce the stability 
+	of the game on devices with low memory causing stuttering or the game to no longer load at all.</div>
+	<br/>
+	<button type="button" onclick="hideExtraDownloads()">Go Back</button> 
+	<br/>
+	<button type="button" onclick="downloadRemastered()">Install Anyway</button>
+</div>
+<div class="extraDownloadsProgress hidden">
+	<!-- I could have just reused the emscripten progress stuff above, but it may benefit me later to keep it separate. -->
+	<div id=extraStatus>Downloading...</div>
+	<div><progress id=extraProgress max=100 value=0></progress></div>
 </div>
 <div id="root" class="hidden"></div>
 <div id="gameView" class="emscripten_border">
