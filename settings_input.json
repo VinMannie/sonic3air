@@ -1,0 +1,73 @@
+﻿{
+        "InputDevices":
+        {
+                "Keyboard1":
+                {
+                        "Up":    [ "Up" ],
+                        "Down":  [ "Down" ],
+                        "Left":  [ "Left" ],
+                        "Right": [ "Right" ],
+                        "A":     [ "Z" ],
+                        "B":     [ "X" ],
+                        "X":     [ "C", "Q" ],
+                        "Y":     [ "V" ],
+                        "Start": [ "Enter" ],
+                        "Back":  [ "Space" ]
+                },
+                "Keyboard2":
+                {
+                        "Up":    [  ],
+                        "Down":  [  ],
+                        "Left":  [  ],
+                        "Right": [  ],
+                        "A":     [  ],
+                        "B":     [  ],
+                        "X":     [  ],
+                        "Y":     [  ],
+                        "Start": [  ],
+                        "Back":  [  ]
+                },
+                "LogitechController":
+                {
+                        "DeviceNames": [ "logitech dual action" ],
+                        "Up":    [ "Axis2", "Pov0" ],
+                        "Down":  [ "Axis3", "Pov2" ],
+                        "Left":  [ "Axis0", "Pov3" ],
+                        "Right": [ "Axis1", "Pov1" ],
+                        "A":     [ "Button1" ],
+                        "B":     [ "Button2" ],
+                        "X":     [ "Button0" ],
+                        "Y":     [ "Button3" ],
+                        "Start": [ "Button9" ],
+                        "Back":  [ "Button8" ]
+                },
+                "PS4Controller":
+                {
+                        "DeviceNames": [ "ps4 controller" ],
+                        "Up":    [ "Axis2", "Button11" ],
+                        "Down":  [ "Axis3", "Button12" ],
+                        "Left":  [ "Axis0", "Button13" ],
+                        "Right": [ "Axis1", "Button14" ],
+                        "A":     [ "Button0" ],
+                        "B":     [ "Button1" ],
+                        "X":     [ "Button2" ],
+                        "Y":     [ "Button3" ],
+                        "Start": [ "Button5", "Button6" ],
+                        "Back":  [ "Button4" ]
+                },
+                "XBoxController":
+                {
+                        "DeviceNames": [ "*", "controller (xbox 360 for windows)" ],
+                        "Up":    [ "Axis2", "Pov0" ],
+                        "Down":  [ "Axis3", "Pov2" ],
+                        "Left":  [ "Axis0", "Pov3" ],
+                        "Right": [ "Axis1", "Pov1" ],
+                        "A":     [ "Button0" ],
+                        "B":     [ "Button1" ],
+                        "X":     [ "Button2" ],
+                        "Y":     [ "Button3" ],
+                        "Start": [ "Button7" ],
+                        "Back":  [ "Button6" ]
+                }
+        }
+}
